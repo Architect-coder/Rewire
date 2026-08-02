@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>REWIRE</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d0f0e">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="REWIRE">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0d0f0e; --panel:#141715; --panel-2:#191d1a;
+  --line: rgba(232,230,223,0.09); --line-strong: rgba(232,230,223,0.16);
+  --paper:#e8e6df; --paper-dim:#9a988f;
+  --gold:#c9a961; --gold-dim:#8f7c4c; --teal:#2dd4bf; --teal-dim:#1f8f80; --red:#c96a4f;
+  --shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+html[data-theme="sepia"]{
+  --ink:#f1e7d2; --panel:#e9dcbe; --panel-2:#e3d3ae;
+  --line: rgba(59,47,31,0.12); --line-strong: rgba(59,47,31,0.22);
+  --paper:#382c1c; --paper-dim:#7a6a4d;
+  --gold:#a5702f; --gold-dim:#8a5c26; --teal:#3f7d6e; --teal-dim:#2f5f54; --red:#a8492f;
+  --shadow: 0 8px 20px rgba(59,47,31,.15);
+}
+html[data-theme="light"]{
+  --ink:#f7f7f4; --panel:#ffffff; --panel-2:#f0efeb;
+  --line: rgba(20,20,18,0.08); --line-strong: rgba(20,20,18,0.14);
+  --paper:#1c1c1a; --paper-dim:#6b6a64;
+  --gold:#a8783a; --gold-dim:#8f6329; --teal:#0f8f7d; --teal-dim:#0c6f61; --red:#b34e33;
+  --shadow: 0 6px 16px rgba(20,20,18,.08);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'IBM Plex Sans',sans-serif; transition:background .2s,color .2s;}
+body{min-height:100vh;}
+::selection{background:var(--gold); color:var(--ink);}
+h1,h2,h3,.serif{font-family:'Fraunces', serif;}
+.mono{font-family:'IBM Plex Mono', monospace;}
+button, input, textarea, select{font-family:inherit;}
+
+/* ---------- shell ---------- */
+#app{display:flex; flex-direction:column; min-height:100vh;}
+body.nav-top #app{flex-direction:column;}
+body.nav-bottom .scroller{order:1;}
+body.nav-bottom .navbar{order:2;}
+body.nav-top .navbar{order:0;}
+body.nav-top .scroller{order:1;}
+
+header{
+  padding:18px 18px 14px; border-bottom:1px solid var(--line-strong);
+  background:linear-gradient(180deg, var(--panel-2), var(--ink));
+  position:sticky; top:0; z-index:50; display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+}
+.eyebrow{font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--teal); margin-bottom:3px;}
+header h1{font-size:24px; font-weight:600; margin:0; letter-spacing:-0.01em; color:var(--paper);}
+header .sub{font-size:11.5px; color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; margin-top:2px;}
+.gear{background:none; border:1px solid var(--line-strong); color:var(--paper-dim); width:36px; height:36px; border-radius:50%; font-size:16px; cursor:pointer; flex-shrink:0; margin-top:2px;}
+.gear:active{background:var(--panel-2);}
+
+.scroller{flex:1; overflow:hidden; position:relative;}
+.viewport{display:flex; height:100%; transition:transform .28s cubic-bezier(.22,.8,.36,1); will-change:transform;}
+.view{flex:0 0 100%; overflow-y:auto; height:100%; padding:16px 16px 90px; -webkit-overflow-scrolling:touch;}
+.view.settings-view{position:fixed; inset:0; z-index:80; background:var(--ink); flex:none; display:none; height:auto; padding-bottom:40px;}
+.view.settings-view.show{display:block;}
+
+.navbar{
+  display:flex; background:var(--panel-2); border-top:1px solid var(--line-strong); z-index:60;
+  padding-bottom: env(safe-area-inset-bottom, 0px); flex-shrink:0;
+}
+body.nav-top .navbar{border-top:none; border-bottom:1px solid var(--line-strong); padding-bottom:0; padding-top:env(safe-area-inset-top,0px);}
+.navbar button{
+  flex:1; background:none; border:none; color:var(--paper-dim); font-family:'IBM Plex Mono',monospace;
+  font-size:10px; letter-spacing:.04em; padding:10px 2px 8px; display:flex; flex-direction:column;
+  align-items:center; gap:3px; cursor:pointer; text-transform:uppercase; transition:color .15s;
+}
+.navbar button .ic{font-size:17px; font-family:'Fraunces',serif; line-height:1;}
+.navbar button.active{color:var(--gold);}
+body.nav-labels-off .navbar button .lbl{display:none;}
+body.nav-labels-off .navbar button{padding:13px 2px;}
+
+/* ---------- shared components ---------- */
+.card{background:var(--panel); border:1px solid var(--line-strong); border-radius:4px; padding:16px 16px 15px; margin-bottom:14px; position:relative; box-shadow:var(--shadow);}
+.card::before{content:''; position:absolute; left:0; top:0; bottom:0; width:2px; background:var(--line-strong); border-radius:4px 0 0 4px;}
+.card.gold::before{background:var(--gold);} .card.teal::before{background:var(--teal);} .card.red::before{background:var(--red);}
+.card-label{font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;}
+.card h3{margin:0 0 8px; font-size:17px; font-weight:600; color:var(--paper);}
+.card p.desc{font-size:12.5px; color:var(--paper-dim); line-height:1.5; margin:0 0 12px;}
+
+textarea, input[type=text], input[type=number], select{
+  width:100%; background:var(--ink); border:1px solid var(--line-strong); border-radius:3px; color:var(--paper);
+  font-family:'IBM Plex Sans',sans-serif; font-size:14px; padding:10px 11px; resize:vertical; margin-bottom:10px;
+}
+textarea:focus, input:focus, select:focus{outline:none; border-color:var(--gold);}
+.row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.chip{background:var(--ink); border:1px solid var(--line-strong); color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; font-size:11.5px; padding:7px 12px; border-radius:20px; cursor:pointer; transition:.15s;}
+.chip.active{background:var(--gold); border-color:var(--gold); color:var(--ink); font-weight:600;}
+.chip.active.teal{background:var(--teal); border-color:var(--teal);}
+.chip.x{padding:5px 10px 5px 12px;}
+.chip.x span{margin-left:6px; opacity:.6;}
+
+.btn{width:100%; background:var(--gold); color:var(--ink); border:none; border-radius:3px; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:12.5px; letter-spacing:.05em; padding:12px; cursor:pointer; text-transform:uppercase; margin-top:2px;}
+.btn:active{opacity:.75;}
+.btn.ghost{background:none; border:1px solid var(--line-strong); color:var(--paper);}
+.btn.teal{background:var(--teal);}
+.btn.small{width:auto; padding:9px 16px; font-size:11px;}
+
+.quote-card{border:1px solid var(--gold-dim); background:var(--panel-2); border-radius:4px; padding:16px 16px 14px; margin-bottom:14px; position:relative; overflow:hidden;}
+.quote-text{font-family:'Fraunces',serif; font-style:italic; font-size:16px; line-height:1.45; color:var(--paper); margin:0 0 8px;}
+.quote-attr{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--gold); letter-spacing:.05em;}
+
+.stat-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;}
+.stat{background:var(--panel); border:1px solid var(--line-strong); border-radius:3px; padding:11px 8px; text-align:center;}
+.stat .n{font-family:'Fraunces',serif; font-size:20px; font-weight:600; color:var(--gold); display:block;}
+.stat .l{font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:.05em;}
+
+.log-entry{border-bottom:1px dashed var(--line); padding:9px 0; font-size:12.5px; display:flex; gap:10px;}
+.log-entry:last-child{border-bottom:none;}
+.log-entry .t{font-family:'IBM Plex Mono',monospace; color:var(--paper-dim); font-size:10px; white-space:nowrap; padding-top:1px;}
+.tag{display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:9px; padding:1px 6px; border-radius:10px; margin-right:5px; letter-spacing:.03em;}
+.tag.overcame{background:rgba(45,212,191,.15); color:var(--teal);}
+.tag.deferred{background:rgba(201,106,79,.15); color:var(--red);}
+.tag.setback{background:rgba(201,169,97,.15); color:var(--gold);}
+.empty{color:var(--paper-dim); font-size:12.5px; font-style:italic; padding:6px 0;}
+
+.section-title{font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--paper-dim); margin:22px 0 10px; display:flex; align-items:center; gap:8px;}
+.section-title::after{content:''; flex:1; height:1px; background:var(--line-strong);}
+.section-title:first-child{margin-top:0;}
+
+.track{height:10px; background:var(--ink); border:1px solid var(--line-strong); border-radius:6px; overflow:hidden;}
+.fill{height:100%; border-radius:6px; transition:width .4s ease;}
+.strength-row{margin-bottom:14px;}
+.strength-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;}
+.strength-name{font-size:13px; font-weight:600; color:var(--paper);}
+.strength-count{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--paper-dim);}
+
+.toast{position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--gold); color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; padding:9px 16px; border-radius:20px; z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(-6px);}
+body.nav-top .toast{bottom:20px;}
+
+.dashline{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--line); font-size:12.5px;}
+.dashline:last-child{border-bottom:none;}
+.dashline .k{color:var(--paper-dim);}
+.dashline .v{color:var(--paper); font-weight:600; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+.nudge{background:rgba(201,169,97,.1); border:1px solid var(--gold-dim); border-radius:4px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; color:var(--paper);}
+.launch-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;}
+.launch-btn{background:var(--ink); border:1px solid var(--line-strong); border-radius:4px; padding:12px 10px; text-align:left; cursor:pointer; color:var(--paper);}
+.launch-btn .ic{font-family:'Fraunces',serif; font-size:18px; color:var(--gold); display:block; margin-bottom:4px;}
+.launch-btn .t{font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em;}
+
+canvas.chart{width:100%; display:block;}
+
+.timer-display{font-family:'Fraunces',serif; font-size:48px; text-align:center; font-weight:600; color:var(--gold); margin:8px 0 4px; letter-spacing:.02em;}
+.timer-sub{text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--paper-dim); margin-bottom:14px; text-transform:uppercase; letter-spacing:.06em;}
+
+.settings-row{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--line);}
+.settings-row:last-child{border-bottom:none;}
+.settings-row .lbl{font-size:13.5px; font-weight:500;}
+.seg{display:flex; background:var(--ink); border:1px solid var(--line-strong); border-radius:20px; padding:2px;}
+.seg button{border:none; background:none; color:var(--paper-dim); font-family:'IBM Plex Mono',monospace; font-size:10.5px; padding:6px 12px; border-radius:16px; cursor:pointer;}
+.seg button.active{background:var(--gold); color:var(--ink); font-weight:600;}
+.toggle{width:42px; height:24px; background:var(--line-strong); border-radius:14px; position:relative; cursor:pointer; border:none; flex-shrink:0;}
+.toggle::after{content:''; position:absolute; width:18px; height:18px; background:var(--paper-dim); border-radius:50%; top:3px; left:3px; transition:.2s;}
+.toggle.on{background:var(--gold);}
+.toggle.on::after{left:21px; background:var(--ink);}
+
+.modal-bg{display:none; position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:100; align-items:flex-end; justify-content:center;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--panel-2); border-top:1px solid var(--gold); border-radius:12px 12px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px)); width:100%; max-width:640px; max-height:85vh; overflow-y:auto;}
+</style>
+</head>
+<body class="nav-bottom">
+<div id="app">
+
+<header>
+  <div>
+    <div class="eyebrow">Metacognition &middot; Neuroplasticity &middot; Stoicism</div>
+    <h1>REWIRE</h1>
+    <div class="sub" id="dateSub">—</div>
+  </div>
+  <button class="gear" onclick="openSettings()">⚙</button>
+</header>
+
+<div class="scroller">
+  <div class="viewport" id="viewport"></div>
+</div>
+
+<div class="navbar" id="navbar"></div>
+
+</div>
+
+<!-- SETTINGS -->
+<div class="view settings-view" id="settingsView">
+  <header style="position:relative;">
+    <div><div class="eyebrow">Configuration</div><h1>Settings</h1></div>
+    <button class="gear" onclick="closeSettings()">✕</button>
+  </header>
+  <div style="padding:16px;">
+    <div class="section-title">Appearance</div>
+    <div class="card">
+      <div class="settings-row"><span class="lbl">Theme</span>
+        <div class="seg" id="themeSeg">
+          <button data-v="dark">Dark</button><button data-v="sepia">Sepia</button><button data-v="light">Light</button>
+        </div>
+      </div>
+    </div>
+    <div class="section-title">Navigation</div>
+    <div class="card">
+      <div class="settings-row"><span class="lbl">Position</span>
+        <div class="seg" id="navPosSeg"><button data-v="bottom">Bottom</button><button data-v="top">Top</button></div>
+      </div>
+      <div class="settings-row"><span class="lbl">Show labels</span>
+        <button class="toggle" id="navLabelToggle" onclick="toggleNavLabels()"></button>
+      </div>
+      <div class="settings-row"><span class="lbl">Swipe between tabs</span>
+        <button class="toggle" id="swipeToggle" onclick="toggleSwipe()"></button>
+      </div>
+    </div>
+    <div class="section-title">Modules shown in navigation</div>
+    <div class="card" id="moduleToggles"></div>
+    <div class="section-title">Reminders</div>
+    <div class="card">
+      <div class="settings-row"><span class="lbl">Evening review nudge</span>
+        <button class="toggle" id="reminderToggle" onclick="toggleReminder()"></button>
+      </div>
+      <div class="settings-row"><span class="lbl">Time</span>
+        <input type="time" id="reminderTimeInput" style="width:auto; margin-bottom:0;" onchange="setReminderTime(this.value)">
+      </div>
+      <p class="desc" style="margin-top:10px; margin-bottom:0;">This fires while REWIRE is open or backgrounded in your browser — it can't wake up a fully closed app, especially on iPhone. For something that fires no matter what, set a native phone alarm instead; ask me and I can set one directly.</p>
+    </div>
+    <div class="section-title">Data</div>
+    <div class="card">
+      <p class="desc">Your entries live in this browser only. Export regularly, especially before switching devices or clearing browser data.</p>
+      <div class="row">
+        <button class="btn small ghost" onclick="exportData()">Export JSON</button>
+        <button class="btn small ghost" onclick="document.getElementById('importFile').click()">Import JSON</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" style="display:none;" onchange="importData(event)">
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= DATA ================= */
+const STORAGE_KEY = 'rewire-suite-v1';
+const DEFAULT_MODULES = ['dashboard','core','stoic','focus','cbt','reflect'];
+const MODULE_META = {
+  dashboard:{label:'Home', icon:'◆', locked:true},
+  core:{label:'Core', icon:'●'},
+  stoic:{label:'Stoic', icon:'▲'},
+  focus:{label:'Focus', icon:'◐'},
+  cbt:{label:'CBT', icon:'✦'},
+  reflect:{label:'Reflect', icon:'◈'}
+};
+
+let state = {
+  settings:{ theme:'dark', navPos:'bottom', navLabels:true, swipe:true, soundVolume:0.4,
+             reminderEnabled:false, reminderTime:'21:00', lastReminderDate:null,
+             modulesOn:{core:true, stoic:true, focus:true, cbt:true, reflect:true} },
+  intents:{}, resistance:[], reps:[], reviews:[], setbacks:[], focusBlocks:[], thoughts:[]
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      state = Object.assign(state, parsed);
+      state.settings = Object.assign({theme:'dark',navPos:'bottom',navLabels:true,swipe:true,soundVolume:0.4,reminderEnabled:false,reminderTime:'21:00',lastReminderDate:null,modulesOn:{core:true,stoic:true,focus:true,cbt:true,reflect:true}}, parsed.settings||{});
+    }
+  }catch(e){ console.warn('load failed', e); }
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ console.warn('save failed', e); }
+}
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function daysAgo(ts){ return (Date.now()-ts)/86400000; }
+function fmtTime(ts){ const d=new Date(ts); return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+
+/* ================= CONTENT ================= */
+const STOIC_MAXIMS = [
+  "You do not control what happens. You control what you do next.",
+  "The obstacle in the way becomes the way forward.",
+  "Judge less, observe more — the sting is in your interpretation, not the event.",
+  "What is not in your control is not your business today.",
+  "Discomfort now is the price of ease never.",
+  "Rehearse the setback before it comes, and it loses its power to surprise you.",
+  "Act well the part that is given to you; leave the rest to what it is.",
+  "A thing feels heavier only because you keep picking it back up.",
+  "You are not required to set the whole world in order — only what's in front of you.",
+  "The mind that adapts to circumstance turns every hindrance into fuel.",
+  "Complaint changes nothing. The next action changes something.",
+  "Waste no more time arguing about what a person should be — be it."
+];
+function todayMaxim(){
+  const day = Math.floor(Date.now()/86400000);
+  return STOIC_MAXIMS[day % STOIC_MAXIMS.length];
+}
+const catColors = { Study:'var(--gold)', SMM:'var(--teal)', Discipline:'var(--red)', Other:'var(--paper-dim)' };
+const DISTORTIONS = ['All-or-nothing','Catastrophizing','Mind reading','Should statements','Overgeneralizing','Other'];
+
+/* ================= VIEW RENDERERS ================= */
+function viewOrder(){ return DEFAULT_MODULES.filter(m => m==='dashboard' || state.settings.modulesOn[m]); }
+
+function renderShell(){
+  document.documentElement.setAttribute('data-theme', state.settings.theme);
+  document.body.className = 'nav-' + state.settings.navPos + (state.settings.navLabels ? '' : ' nav-labels-off');
+  document.getElementById('dateSub').textContent = new Date().toLocaleDateString(undefined,{weekday:'long', month:'long', day:'numeric'});
+
+  const order = viewOrder();
+  const viewport = document.getElementById('viewport');
+  viewport.innerHTML = order.map(m => `<div class="view" data-mod="${m}" id="v-${m}">${renderModule(m)}</div>`).join('');
+  const navbar = document.getElementById('navbar');
+  navbar.innerHTML = order.map((m,i) => `<button data-i="${i}" class="${i===currentIndex?'active':''}"><span class="ic">${MODULE_META[m].icon}</span><span class="lbl">${MODULE_META[m].label}</span></button>`).join('');
+  navbar.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>goTo(parseInt(b.dataset.i))));
+  positionViewport(false);
+  attachModuleHandlers();
+}
+
+let currentIndex = 0;
+function goTo(i){
+  const order = viewOrder();
+  currentIndex = Math.max(0, Math.min(order.length-1, i));
+  positionViewport(true);
+  document.querySelectorAll('.navbar button').forEach((b,idx)=>b.classList.toggle('active', idx===currentIndex));
+}
+function positionViewport(animate){
+  const vp = document.getElementById('viewport');
+  vp.style.transition = animate ? 'transform .28s cubic-bezier(.22,.8,.36,1)' : 'none';
+  vp.style.transform = `translateX(-${currentIndex*100}%)`;
+}
+
+function launch(mod){
+  const order = viewOrder();
+  const idx = order.indexOf(mod);
+  if(idx>=0) goTo(idx);
+}
+
+function renderModule(m){
+  if(m==='dashboard') return dashboardHTML();
+  if(m==='core') return coreHTML();
+  if(m==='stoic') return stoicHTML();
+  if(m==='focus') return focusHTML();
+  if(m==='cbt') return cbtHTML();
+  if(m==='reflect') return reflectHTML();
+  return '';
+}
+
+/* ---------- DASHBOARD ---------- */
+function dashboardHTML(){
+  const ti = state.intents[todayKey()];
+  const weekReps = state.reps.filter(r=>daysAgo(r.ts)<=7).length;
+  const focusMins = state.focusBlocks.filter(f=>daysAgo(f.ts)<=7).reduce((a,f)=>a+f.duration,0);
+  const stoicStreak = calcStoicStreak();
+  const noiseCount = ti && ti.noise ? ti.noise.length : 0;
+
+  let nudge = '';
+  const yKey = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  if(!state.reviews.find(r=>r.date===yKey) && Object.keys(state.intents).length>0 && state.intents[yKey]){
+    nudge = `<div class="nudge">You haven't closed out yesterday's review yet.</div>`;
+  } else if(weekReps===0){
+    nudge = `<div class="nudge">No reps logged this week. One small rep today restarts the pathway.</div>`;
+  }
+
+  return `
+  <div class="quote-card">
+    <p class="quote-text">${esc(todayMaxim())}</p>
+    <div class="quote-attr">TODAY'S MAXIM</div>
+  </div>
+  ${nudge}
+  <div class="card gold">
+    <div class="card-label">Today</div>
+    ${ti ? `
+      <div class="dashline"><span class="k">Hard thing</span><span class="v">${esc(ti.task)}</span></div>
+      <div class="dashline"><span class="k">Confidence</span><span class="v">${ti.confidence||'—'}/5</span></div>
+      <div class="dashline"><span class="k">Noise being cut</span><span class="v">${noiseCount} named</span></div>
+    ` : `<p class="desc" style="margin-bottom:0;">No intent set yet today. Head to Core to set one.</p>`}
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><span class="n">${weekReps}</span><span class="l">Reps (7d)</span></div>
+    <div class="stat"><span class="n">${focusMins}</span><span class="l">Focus min (7d)</span></div>
+    <div class="stat"><span class="n">${stoicStreak}</span><span class="l">Stoic streak</span></div>
+  </div>
+  <div class="section-title">Pathways</div>
+  <div class="card">${strengthBarsHTML()}</div>
+  <div class="section-title">Jump in</div>
+  <div class="launch-grid">
+    ${DEFAULT_MODULES.filter(m=>m!=='dashboard' && state.settings.modulesOn[m]).map(m=>`
+      <div class="launch-btn" onclick="launch('${m}')"><span class="ic">${MODULE_META[m].icon}</span><span class="t">${MODULE_META[m].label}</span></div>
+    `).join('')}
+  </div>
+  `;
+}
+
+function strengthBarsHTML(){
+  const cats = ['Study','SMM','Discipline','Other'];
+  return cats.map(cat=>{
+    const s = pathwayStrength(cat);
+    const count = state.reps.filter(r=>r.cat===cat).length;
+    return `<div class="strength-row">
+      <div class="strength-head"><span class="strength-name">${cat}</span><span class="strength-count">${count} total</span></div>
+      <div class="track"><div class="fill" style="width:${s}%; background:${catColors[cat]};"></div></div>
+    </div>`;
+  }).join('');
+}
+function pathwayStrength(cat){
+  const relevant = state.reps.filter(r => r.cat===cat && daysAgo(r.ts)<=21);
+  let score = 0;
+  relevant.forEach(r=>{ const age=daysAgo(r.ts); score += Math.max(0,1-age/21)*8; });
+  return Math.min(100, Math.round(score));
+}
+function calcStoicStreak(){
+  let streak=0; let d = new Date();
+  for(let i=0;i<60;i++){
+    const key = d.toISOString().slice(0,10);
+    const rev = state.reviews.find(r=>r.date===key);
+    if(rev && rev.premeditatio){ streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  return streak;
+}
+
+/* ---------- CORE ---------- */
+function coreHTML(){
+  const ti = state.intents[todayKey()] || {};
+  const tr = state.reviews.find(r=>r.date===todayKey()) || {};
+  return `
+  <div class="card gold">
+    <div class="card-label">Morning Intent</div>
+    <h3>Today's hard thing</h3>
+    <p class="desc">Name the one task you're most likely to avoid.</p>
+    <input type="text" id="intentTask" placeholder="e.g. Cold-message 3 Fiverr clients" value="${esc(ti.task||'')}">
+    <p class="desc" style="margin-bottom:6px;">Confidence you'll actually do it:</p>
+    <div class="row" id="confRow">
+      ${[1,2,3,4,5].map(c=>`<div class="chip ${ti.confidence===c?'active':''}" data-c="${c}">${c}</div>`).join('')}
+    </div>
+    <p class="desc" style="margin-bottom:6px;">Noise you're consciously cutting today (not in your control, or not worth it):</p>
+    <div class="row" id="noiseChips">${(ti.noise||[]).map((n,i)=>`<div class="chip x">${esc(n)}<span onclick="removeNoise(${i})">✕</span></div>`).join('')}</div>
+    <input type="text" id="noiseInput" placeholder="Type a noise item, press add">
+    <button class="btn ghost small" onclick="addNoise()" style="margin-bottom:12px;">+ Add noise item</button>
+    <button class="btn" onclick="saveIntent()">Lock it in</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Resistance Check</div>
+    <h3>I don't feel like doing it</h3>
+    <p class="desc">This is the moment that matters most. Log it before you decide anything.</p>
+    <button class="btn ghost" onclick="openResistance()">Log resistance →</button>
+  </div>
+
+  <div class="card teal">
+    <div class="card-label">Rep Log</div>
+    <h3>Log a deliberate rep</h3>
+    <p class="desc">Any moment of effortful practice. This is what physically rewires the pathway.</p>
+    <div class="row" id="repCatRow">
+      <div class="chip" data-cat="Study">Study</div><div class="chip" data-cat="SMM">SMM</div>
+      <div class="chip" data-cat="Discipline">Discipline</div><div class="chip" data-cat="Other">Other</div>
+    </div>
+  </div>
+
+  <div class="card red">
+    <div class="card-label">Setback</div>
+    <h3>Something failed or fell through</h3>
+    <textarea id="setbackNote" rows="2" placeholder="What happened?"></textarea>
+    <input type="text" id="setbackNext" placeholder="Next rep despite this">
+    <button class="btn ghost" onclick="saveSetback()">Log setback</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Evening Review</div>
+    <h3>Close the day</h3>
+    <textarea id="revDid" rows="2" placeholder="What did you actually do vs. plan to do?">${esc(tr.did||'')}</textarea>
+    <textarea id="revCalib" rows="2" placeholder="Where was your confidence wrong — over or under?">${esc(tr.calib||'')}</textarea>
+    <input type="text" id="revTomorrow" placeholder="Tomorrow's target rep" value="${esc(tr.tomorrow||'')}">
+    <button class="btn" onclick="saveReview()">Close entry</button>
+  </div>
+
+  <div class="section-title">Recent resistance</div>
+  <div class="card">${resistanceLogHTML(8)}</div>
+  `;
+}
+function resistanceLogHTML(limit){
+  const items = [...state.resistance].reverse().slice(0,limit);
+  if(!items.length) return '<div class="empty">Nothing logged yet.</div>';
+  return items.map(r=>`<div class="log-entry"><span class="t">${fmtTime(r.ts)}</span><span><span class="tag ${r.action}">${r.action==='overcame'?'PUSHED':'DEFERRED'}</span>${esc(r.task)}${r.control?` <span style="color:var(--paper-dim)">· ${r.control==='in'?'in my control':'not in my control'}</span>`:''}</span></div>`).join('');
+}
+
+let selectedConf = null;
+function attachCoreHandlers(){
+  document.querySelectorAll('#confRow .chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      document.querySelectorAll('#confRow .chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active'); selectedConf = parseInt(chip.dataset.c);
+    });
+  });
+  const rc = document.getElementById('repCatRow');
+  if(rc) rc.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      state.reps.push({cat:chip.dataset.cat, ts:Date.now()});
+      save(); showToast(chip.dataset.cat+' rep logged'); refreshCurrentView();
+    });
+  });
+}
+function addNoise(){
+  const inp = document.getElementById('noiseInput');
+  const v = inp.value.trim(); if(!v) return;
+  const key = todayKey();
+  if(!state.intents[key]) state.intents[key] = {task:'', confidence:null, noise:[]};
+  if(!state.intents[key].noise) state.intents[key].noise = [];
+  state.intents[key].noise.push(v);
+  save(); inp.value=''; refreshCurrentView();
+}
+function removeNoise(i){
+  const key = todayKey();
+  if(state.intents[key] && state.intents[key].noise){ state.intents[key].noise.splice(i,1); save(); refreshCurrentView(); }
+}
+function saveIntent(){
+  const task = document.getElementById('intentTask').value.trim();
+  if(!task){ showToast('Name the task first'); return; }
+  const key = todayKey();
+  const existingNoise = (state.intents[key]||{}).noise || [];
+  state.intents[key] = { task, confidence:selectedConf, noise:existingNoise, ts:Date.now() };
+  save(); showToast('Intent locked in'); refreshCurrentView();
+}
+function saveSetback(){
+  const note = document.getElementById('setbackNote').value.trim();
+  const next = document.getElementById('setbackNext').value.trim();
+  if(!note){ showToast('What happened?'); return; }
+  state.setbacks.push({note, next, ts:Date.now()});
+  save(); showToast('Logged. Next rep stands.'); refreshCurrentView();
+}
+function saveReview(){
+  const did = document.getElementById('revDid').value.trim();
+  const calib = document.getElementById('revCalib').value.trim();
+  const tomorrow = document.getElementById('revTomorrow').value.trim();
+  if(!did && !calib){ showToast('Fill at least one field'); return; }
+  const key = todayKey();
+  let existing = state.reviews.find(r=>r.date===key);
+  if(existing){ existing.did=did; existing.calib=calib; existing.tomorrow=tomorrow; }
+  else state.reviews.push({date:key, did, calib, tomorrow, ts:Date.now()});
+  save(); showToast('Entry closed'); refreshCurrentView();
+}
+
+/* ---------- resistance modal ---------- */
+function openResistance(){
+  document.body.insertAdjacentHTML('beforeend', `
+  <div class="modal-bg show" id="resistModalBg">
+    <div class="modal">
+      <div class="quote-card"><p class="quote-text">Be real and do what you are supposed to be doing — not what you feel like doing.</p><div class="quote-attr">— OYIBE</div></div>
+      <p class="desc">What's the task you're resisting right now?</p>
+      <input type="text" id="resistTask" placeholder="e.g. Reading PHY 102 notes">
+      <p class="desc" style="margin-bottom:8px;">Is this actually in your control?</p>
+      <div class="row" id="ctrlRow">
+        <div class="chip" data-ctrl="in">In my control</div>
+        <div class="chip" data-ctrl="not">Not in my control</div>
+      </div>
+      <p class="desc" style="margin-bottom:8px;">Be honest — what's actually happening?</p>
+      <div class="row" style="margin-bottom:14px;">
+        <div class="chip" onclick="logResistance('overcame')">Doing it anyway →</div>
+        <div class="chip" onclick="logResistance('deferred')">Genuine reason to delay</div>
+      </div>
+      <button class="btn ghost" onclick="document.getElementById('resistModalBg').remove()">Cancel</button>
+    </div>
+  </div>`);
+  document.querySelectorAll('#ctrlRow .chip').forEach(c=>c.addEventListener('click',()=>{
+    document.querySelectorAll('#ctrlRow .chip').forEach(x=>x.classList.remove('active')); c.classList.add('active');
+  }));
+}
+function logResistance(action){
+  const task = document.getElementById('resistTask').value.trim() || '(unnamed task)';
+  const ctrlEl = document.querySelector('#ctrlRow .chip.active');
+  const control = ctrlEl ? ctrlEl.dataset.ctrl : null;
+  state.resistance.push({task, action, control, ts:Date.now()});
+  save();
+  document.getElementById('resistModalBg').remove();
+  showToast(action==='overcame' ? 'Logged — now go do it' : 'Logged honestly');
+  refreshCurrentView();
+}
+
+/* ---------- STOIC ---------- */
+function stoicHTML(){
+  const tr = state.reviews.find(r=>r.date===todayKey()) || {};
+  return `
+  <div class="quote-card">
+    <p class="quote-text">${esc(todayMaxim())}</p>
+    <div class="quote-attr">TODAY'S MAXIM</div>
+  </div>
+  <div class="card gold">
+    <div class="card-label">Dichotomy of control</div>
+    <h3>What's actually yours to work on today</h3>
+    <p class="desc">Pulled from your noise list and resistance log — things you've already tagged as in/out of your control.</p>
+    ${dichotomyListHTML()}
+  </div>
+  <div class="card">
+    <div class="card-label">Premeditatio Malorum</div>
+    <h3>Rehearse the setback in advance</h3>
+    <p class="desc">Picture what could realistically go wrong today, and how you'd respond if it did. This blunts the surprise before it lands.</p>
+    <textarea id="premedInput" rows="3" placeholder="What might go wrong today, and what would you do about it?">${esc(tr.premeditatio||'')}</textarea>
+    <button class="btn ghost" onclick="savePremeditatio()">Save reflection</button>
+  </div>
+  <div class="section-title">Streak</div>
+  <div class="stat-grid"><div class="stat"><span class="n">${calcStoicStreak()}</span><span class="l">Days in a row</span></div>
+  <div class="stat"><span class="n">${state.resistance.filter(r=>r.control==='in').length}</span><span class="l">Tagged: in control</span></div>
+  <div class="stat"><span class="n">${state.resistance.filter(r=>r.control==='not').length}</span><span class="l">Tagged: not control</span></div></div>
+  `;
+}
+function dichotomyListHTML(){
+  const ti = state.intents[todayKey()];
+  const noise = (ti && ti.noise) ? ti.noise : [];
+  const recentResist = state.resistance.filter(r=>daysAgo(r.ts)<=1 && r.control);
+  if(!noise.length && !recentResist.length) return '<div class="empty">Nothing tagged yet today — add noise items in Core, or tag control when logging resistance.</div>';
+  let html = '';
+  if(noise.length) html += noise.map(n=>`<div class="dashline"><span class="k">${esc(n)}</span><span class="v" style="color:var(--red)">cut — not worth it</span></div>`).join('');
+  if(recentResist.length) html += recentResist.map(r=>`<div class="dashline"><span class="k">${esc(r.task)}</span><span class="v" style="color:${r.control==='in'?'var(--teal)':'var(--red)'}">${r.control==='in'?'yours to act on':'release it'}</span></div>`).join('');
+  return html;
+}
+function savePremeditatio(){
+  const val = document.getElementById('premedInput').value.trim();
+  const key = todayKey();
+  let existing = state.reviews.find(r=>r.date===key);
+  if(existing){ existing.premeditatio = val; } else state.reviews.push({date:key, premeditatio:val, ts:Date.now()});
+  save(); showToast('Reflection saved'); refreshCurrentView();
+}
+
+/* ---------- FOCUS ---------- */
+let timerState = { remaining:0, total:0, running:false, interval:null, distractions:0 };
+function focusHTML(){
+  const weekMins = state.focusBlocks.filter(f=>daysAgo(f.ts)<=7).reduce((a,f)=>a+f.duration,0);
+  return `
+  <div class="card gold">
+    <div class="card-label">Focus block</div>
+    <div class="timer-display" id="timerDisplay">25:00</div>
+    <div class="timer-sub" id="timerSub">not started</div>
+    <div class="row" style="justify-content:center;">
+      <div class="chip" onclick="setTimerMinutes(15)">15m</div>
+      <div class="chip" onclick="setTimerMinutes(25)">25m</div>
+      <div class="chip" onclick="setTimerMinutes(45)">45m</div>
+      <div class="chip" onclick="setTimerMinutes(60)">60m</div>
+    </div>
+    <div class="row">
+      <button class="btn small" onclick="startTimer()" style="flex:1;">Start</button>
+      <button class="btn small ghost" onclick="pauseTimer()" style="flex:1;">Pause</button>
+      <button class="btn small ghost" onclick="resetTimer()" style="flex:1;">Reset</button>
+    </div>
+    <p class="desc" style="margin:12px 0 6px;">Distraction — tap each time your attention pulls away:</p>
+    <button class="btn ghost" onclick="logDistraction()">+ Distraction (<span id="distCount">0</span>)</button>
+  </div>
+  <div class="card teal">
+    <div class="card-label">Ambient sound</div>
+    <h3>Cut the external noise</h3>
+    <div class="row">
+      <div class="chip" id="soundOff" onclick="setSound(null)">Off</div>
+      <div class="chip" id="soundWhite" onclick="setSound('white')">White noise</div>
+      <div class="chip" id="soundBrown" onclick="setSound('brown')">Brown noise</div>
+      <div class="chip" id="soundRain" onclick="setSound('rain')">Rain</div>
+    </div>
+    <p class="desc" style="margin:12px 0 6px;">Volume</p>
+    <input type="range" id="volSlider" min="0" max="100" value="${Math.round((state.settings.soundVolume||0.4)*100)}" oninput="setVolume(this.value)" style="width:100%; margin-bottom:4px;">
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><span class="n">${weekMins}</span><span class="l">Focus min (7d)</span></div>
+    <div class="stat"><span class="n">${state.focusBlocks.length}</span><span class="l">Total blocks</span></div>
+    <div class="stat"><span class="n">${state.focusBlocks.reduce((a,f)=>a+(f.distractions||0),0)}</span><span class="l">Total distractions</span></div>
+  </div>
+  <div class="section-title">Block history</div>
+  <div class="card">${focusHistoryHTML()}</div>
+  `;
+}
+function focusHistoryHTML(){
+  const items = [...state.focusBlocks].reverse().slice(0,10);
+  if(!items.length) return '<div class="empty">No focus blocks yet.</div>';
+  return items.map(f=>`<div class="log-entry"><span class="t">${fmtTime(f.ts)}</span><span>${f.duration} min block, ${f.distractions||0} distraction(s)</span></div>`).join('');
+}
+function setTimerMinutes(m){
+  if(timerState.running) return;
+  timerState.total = m*60; timerState.remaining = m*60; timerState.distractions = 0;
+  updateTimerDisplay(); document.getElementById('distCount').textContent = '0';
+}
+function updateTimerDisplay(){
+  const d = document.getElementById('timerDisplay'); if(!d) return;
+  const mm = Math.floor(timerState.remaining/60).toString().padStart(2,'0');
+  const ss = Math.floor(timerState.remaining%60).toString().padStart(2,'0');
+  d.textContent = mm+':'+ss;
+  const sub = document.getElementById('timerSub');
+  if(sub) sub.textContent = timerState.running ? 'in progress' : (timerState.remaining===timerState.total ? 'not started' : 'paused');
+}
+function startTimer(){
+  if(!timerState.total){ timerState.total=1500; timerState.remaining=1500; }
+  if(timerState.running) return;
+  timerState.running = true;
+  timerState.interval = setInterval(()=>{
+    timerState.remaining--;
+    if(timerState.remaining<=0){
+      clearInterval(timerState.interval); timerState.running=false;
+      const mins = Math.round(timerState.total/60);
+      state.focusBlocks.push({ts:Date.now(), duration:mins, distractions:timerState.distractions});
+      save(); showToast('Block complete — ' + mins + ' min logged'); stopSound();
+      timerState.remaining = timerState.total;
+      refreshCurrentView();
+      return;
+    }
+    updateTimerDisplay();
+  },1000);
+  updateTimerDisplay();
+}
+function pauseTimer(){ timerState.running=false; clearInterval(timerState.interval); updateTimerDisplay(); }
+function resetTimer(){ pauseTimer(); timerState.remaining = timerState.total || 1500; timerState.distractions=0; updateTimerDisplay(); const dc=document.getElementById('distCount'); if(dc) dc.textContent='0'; }
+function logDistraction(){ timerState.distractions++; const dc=document.getElementById('distCount'); if(dc) dc.textContent = timerState.distractions; }
+
+/* ambient noise via WebAudio, no files needed */
+let audioCtx=null, noiseNode=null, filterNode=null, gainNode=null, currentSound=null;
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
+function makeNoiseBuffer(kind){
+  const bufferSize = 2*audioCtx.sampleRate;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let lastOut = 0;
+  for(let i=0;i<bufferSize;i++){
+    const white = Math.random()*2-1;
+    if(kind==='brown'){ lastOut = (lastOut + 0.02*white)/1.02; data[i] = lastOut*3.5; }
+    else { data[i] = white; }
+  }
+  return buffer;
+}
+function setSound(kind){
+  stopSound();
+  ['soundOff','soundWhite','soundBrown','soundRain'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.remove('active'); });
+  if(!kind){ return; }
+  ensureAudio();
+  const buffer = makeNoiseBuffer(kind==='brown' ? 'brown' : 'white');
+  noiseNode = audioCtx.createBufferSource(); noiseNode.buffer = buffer; noiseNode.loop = true;
+  filterNode = audioCtx.createBiquadFilter();
+  if(kind==='rain'){ filterNode.type='bandpass'; filterNode.frequency.value=1800; filterNode.Q.value=0.6; }
+  else if(kind==='brown'){ filterNode.type='lowpass'; filterNode.frequency.value=500; }
+  else { filterNode.type='lowpass'; filterNode.frequency.value=4000; }
+  gainNode = audioCtx.createGain(); gainNode.gain.value = (state.settings.soundVolume||0.4) * 0.6;
+  noiseNode.connect(filterNode); filterNode.connect(gainNode); gainNode.connect(audioCtx.destination);
+  noiseNode.start(0); currentSound = kind;
+  const map = {white:'soundWhite', brown:'soundBrown', rain:'soundRain'};
+  const el = document.getElementById(map[kind]); if(el) el.classList.add('active');
+}
+function stopSound(){ if(noiseNode){ try{noiseNode.stop();}catch(e){} noiseNode=null; } currentSound=null; }
+function setVolume(v){
+  state.settings.soundVolume = v/100; save();
+  if(gainNode) gainNode.gain.value = state.settings.soundVolume * 0.6;
+}
+
+/* ---------- CBT ---------- */
+function cbtHTML(){
+  const linkable = recentLinkable();
+  return `
+  <div class="card">
+    <div class="card-label">Thought record</div>
+    <h3>Standalone — open this whenever you want, not because anything triggered it</h3>
+    <p class="desc">Come here on your own terms. Nothing elsewhere in the app watches for this or pushes you here.</p>
+    <input type="text" id="cbtSituation" placeholder="Situation — what happened?">
+    <textarea id="cbtThought" rows="2" placeholder="The automatic thought"></textarea>
+    <p class="desc" style="margin-bottom:6px;">Distortion pattern (if any fits):</p>
+    <div class="row" id="distortionRow">${DISTORTIONS.map(d=>`<div class="chip">${d}</div>`).join('')}</div>
+    <textarea id="cbtReframe" rows="2" placeholder="A more balanced way to see it"></textarea>
+    ${linkable.length ? `
+      <p class="desc" style="margin-bottom:6px;">Optionally link to a log entry from today:</p>
+      <select id="cbtLink"><option value="">— none —</option>${linkable.map(l=>`<option value="${l.id}">${esc(l.label)}</option>`).join('')}</select>
+    ` : ''}
+    <button class="btn ghost" onclick="saveThought()">Save thought record</button>
+  </div>
+  <div class="section-title">Past entries</div>
+  <div class="card">${thoughtHistoryHTML()}</div>
+  `;
+}
+function recentLinkable(){
+  const items = [];
+  state.resistance.filter(r=>daysAgo(r.ts)<=1).forEach((r,i)=>items.push({id:'resist-'+r.ts, label:'Resistance: '+r.task}));
+  state.setbacks.filter(s=>daysAgo(s.ts)<=1).forEach((s,i)=>items.push({id:'setback-'+s.ts, label:'Setback: '+s.note.slice(0,40)}));
+  return items;
+}
+let selectedDistortion = null;
+function attachCbtHandlers(){
+  const row = document.getElementById('distortionRow');
+  if(row) row.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    row.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); selectedDistortion=c.textContent;
+  }));
+}
+function saveThought(){
+  const situation = document.getElementById('cbtSituation').value.trim();
+  const thought = document.getElementById('cbtThought').value.trim();
+  const reframe = document.getElementById('cbtReframe').value.trim();
+  const linkEl = document.getElementById('cbtLink');
+  const link = linkEl ? linkEl.value : '';
+  if(!situation && !thought){ showToast('Add at least the situation or thought'); return; }
+  state.thoughts.push({situation, thought, distortion:selectedDistortion, reframe, link, ts:Date.now()});
+  save(); selectedDistortion=null; showToast('Thought record saved'); refreshCurrentView();
+}
+function thoughtHistoryHTML(){
+  const items = [...state.thoughts].reverse().slice(0,10);
+  if(!items.length) return '<div class="empty">No thought records yet.</div>';
+  return items.map(t=>`
+    <div class="log-entry" style="display:block;">
+      <div class="t" style="margin-bottom:4px;">${fmtTime(t.ts)}${t.distortion?' · '+esc(t.distortion):''}</div>
+      ${t.situation?'<div style="margin-bottom:3px;"><b style="color:var(--paper-dim)">Situation:</b> '+esc(t.situation)+'</div>':''}
+      ${t.thought?'<div style="margin-bottom:3px;"><b style="color:var(--paper-dim)">Thought:</b> '+esc(t.thought)+'</div>':''}
+      ${t.reframe?'<div><b style="color:var(--paper-dim)">Reframe:</b> '+esc(t.reframe)+'</div>':''}
+    </div>`).join('');
+}
+
+/* ---------- REFLECT ---------- */
+function reflectHTML(){
+  const totalReps = state.reps.length;
+  const totalResist = state.resistance.length;
+  const totalOvercame = state.resistance.filter(r=>r.action==='overcame').length;
+  return `
+  <div class="stat-grid">
+    <div class="stat"><span class="n">${totalReps}</span><span class="l">Total reps</span></div>
+    <div class="stat"><span class="n">${totalResist}</span><span class="l">Resist. caught</span></div>
+    <div class="stat"><span class="n">${state.reviews.length}</span><span class="l">Reviews closed</span></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Avoidance ratio</div>
+    <h3>${totalResist===0 ? 'No resistance logged yet' : Math.round((totalOvercame/totalResist)*100)+'% pushed through ('+totalOvercame+' of '+totalResist+')'}</h3>
+    <p class="desc" style="margin-bottom:0;">The clearest signal you have of whether the system is working.</p>
+  </div>
+  <div class="section-title">Reps per category — last 14 days</div>
+  <div class="card"><canvas class="chart" id="chartReps" height="140"></canvas></div>
+  <div class="section-title">Resistance — pushed vs deferred, weekly</div>
+  <div class="card"><canvas class="chart" id="chartResist" height="140"></canvas></div>
+  <div class="section-title">Pathway strength trend</div>
+  <div class="card"><canvas class="chart" id="chartPathway" height="140"></canvas></div>
+  <div class="section-title">Review entries</div>
+  <div class="card">${reviewHistoryHTML()}</div>
+  `;
+}
+function reviewHistoryHTML(){
+  const items = [...state.reviews].sort((a,b)=>b.ts-a.ts).slice(0,10);
+  if(!items.length) return '<div class="empty">No evening reviews yet.</div>';
+  return items.map(r=>`
+    <div class="log-entry" style="display:block;">
+      <div class="t" style="margin-bottom:4px;">${r.date}</div>
+      ${r.did?'<div style="margin-bottom:3px;"><b style="color:var(--paper-dim)">Did:</b> '+esc(r.did)+'</div>':''}
+      ${r.calib?'<div style="margin-bottom:3px;"><b style="color:var(--paper-dim)">Calibration:</b> '+esc(r.calib)+'</div>':''}
+      ${r.tomorrow?'<div><b style="color:var(--paper-dim)">Next:</b> '+esc(r.tomorrow)+'</div>':''}
+    </div>`).join('');
+}
+
+/* ---------- canvas charts (lightweight, no deps) ---------- */
+function drawLineChart(canvas, series, labels, colors){
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth, h = 140;
+  canvas.width = w*dpr; canvas.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const pad = {l:28,r:8,t:10,b:20};
+  const maxVal = Math.max(1, ...series.flat());
+  const stepX = (w-pad.l-pad.r)/(labels.length-1||1);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--line-strong');
+  ctx.lineWidth = 1;
+  for(let g=0; g<=3; g++){
+    const y = pad.t + (h-pad.t-pad.b)*g/3;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.stroke();
+  }
+  series.forEach((data, si)=>{
+    ctx.beginPath(); ctx.strokeStyle = colors[si]; ctx.lineWidth = 2;
+    data.forEach((v,i)=>{
+      const x = pad.l + i*stepX;
+      const y = pad.t + (h-pad.t-pad.b)*(1 - v/maxVal);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--paper-dim');
+  ctx.font = '9px IBM Plex Mono';
+  labels.forEach((l,i)=>{ if(i%Math.ceil(labels.length/6)===0){ ctx.fillText(l, pad.l+i*stepX-8, h-4); } });
+}
+function drawBarChart(canvas, seriesA, seriesB, labels, colorA, colorB){
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth, h = 140;
+  canvas.width = w*dpr; canvas.height = h*dpr; ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const pad = {l:28,r:8,t:10,b:20};
+  const maxVal = Math.max(1, ...seriesA, ...seriesB);
+  const groupW = (w-pad.l-pad.r)/labels.length;
+  labels.forEach((l,i)=>{
+    const x0 = pad.l + i*groupW;
+    const bw = groupW*0.32;
+    const hA = (h-pad.t-pad.b)*(seriesA[i]/maxVal);
+    const hB = (h-pad.t-pad.b)*(seriesB[i]/maxVal);
+    ctx.fillStyle = colorA; ctx.fillRect(x0+groupW*0.12, h-pad.b-hA, bw, hA);
+    ctx.fillStyle = colorB; ctx.fillRect(x0+groupW*0.52, h-pad.b-hB, bw, hB);
+  });
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--paper-dim');
+  ctx.font = '9px IBM Plex Mono';
+  labels.forEach((l,i)=>{ ctx.fillText(l, pad.l+i*groupW+groupW*0.2, h-4); });
+}
+function renderCharts(){
+  const days = []; for(let i=13;i>=0;i--){ const d=new Date(Date.now()-i*86400000); days.push(d); }
+  const labels = days.map(d=>d.getDate()+'/'+(d.getMonth()+1));
+  const cats = ['Study','SMM','Discipline'];
+  const series = cats.map(cat => days.map(d=>{
+    const key = d.toISOString().slice(0,10);
+    return state.reps.filter(r=>r.cat===cat && new Date(r.ts).toISOString().slice(0,10)===key).length;
+  }));
+  drawLineChart(document.getElementById('chartReps'), series, labels, ['#c9a961','#2dd4bf','#c96a4f']);
+
+  const weeks = []; for(let i=5;i>=0;i--){ weeks.push(i); }
+  const wLabels = weeks.map(i=>i===0?'this wk':i+'w ago');
+  const pushed = weeks.map(i=> state.resistance.filter(r=>{const da=daysAgo(r.ts); return da>=i*7 && da<(i+1)*7 && r.action==='overcame';}).length );
+  const deferred = weeks.map(i=> state.resistance.filter(r=>{const da=daysAgo(r.ts); return da>=i*7 && da<(i+1)*7 && r.action==='deferred';}).length );
+  drawBarChart(document.getElementById('chartResist'), pushed.reverse(), deferred.reverse(), wLabels.reverse(), '#2dd4bf', '#c96a4f');
+
+  const pathwaySeries = cats.map(cat => days.map(d=>{
+    const dts = d.getTime();
+    const relevant = state.reps.filter(r=>r.cat===cat && r.ts<=dts && (dts-r.ts)/86400000<=21);
+    let score=0; relevant.forEach(r=>{ const age=(dts-r.ts)/86400000; score += Math.max(0,1-age/21)*8; });
+    return Math.min(100, Math.round(score));
+  }));
+  drawLineChart(document.getElementById('chartPathway'), pathwaySeries, labels, ['#c9a961','#2dd4bf','#c96a4f']);
+}
+
+/* ================= MODULE HANDLER ATTACH ================= */
+function attachModuleHandlers(){
+  attachCoreHandlers();
+  attachCbtHandlers();
+  updateTimerDisplay();
+  renderCharts();
+}
+function refreshCurrentView(){
+  renderShell();
+}
+
+/* ================= SWIPE ================= */
+let touchStartX=null, touchStartY=null, dragging=false;
+function attachSwipe(){
+  const vp = document.getElementById('viewport');
+  vp.addEventListener('touchstart', e=>{
+    if(!state.settings.swipe) return;
+    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; dragging=true;
+    vp.style.transition='none';
+  }, {passive:true});
+  vp.addEventListener('touchmove', e=>{
+    if(!dragging || !state.settings.swipe) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if(Math.abs(dy) > Math.abs(dx)) return; // vertical scroll, let it pass
+    const base = -currentIndex*100;
+    const pct = (dx / vp.clientWidth) * 100;
+    vp.style.transform = `translateX(${base+pct}%)`;
+  }, {passive:true});
+  vp.addEventListener('touchend', e=>{
+    if(!dragging || !state.settings.swipe){ dragging=false; return; }
+    dragging=false;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const order = viewOrder();
+    if(dx < -60 && currentIndex < order.length-1) currentIndex++;
+    else if(dx > 60 && currentIndex > 0) currentIndex--;
+    positionViewport(true);
+    document.querySelectorAll('.navbar button').forEach((b,idx)=>b.classList.toggle('active', idx===currentIndex));
+  });
+}
+
+/* ================= SETTINGS ================= */
+function openSettings(){
+  document.getElementById('settingsView').classList.add('show');
+  document.getElementById('themeSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.v===state.settings.theme));
+  document.getElementById('navPosSeg').querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.v===state.settings.navPos));
+  document.getElementById('navLabelToggle').classList.toggle('on', state.settings.navLabels);
+  document.getElementById('swipeToggle').classList.toggle('on', state.settings.swipe);
+  document.getElementById('reminderToggle').classList.toggle('on', state.settings.reminderEnabled);
+  document.getElementById('reminderTimeInput').value = state.settings.reminderTime || '21:00';
+  const mt = document.getElementById('moduleToggles');
+  mt.innerHTML = DEFAULT_MODULES.filter(m=>m!=='dashboard').map(m=>`
+    <div class="settings-row"><span class="lbl">${MODULE_META[m].icon} ${MODULE_META[m].label}</span>
+      <button class="toggle ${state.settings.modulesOn[m]?'on':''}" onclick="toggleModule('${m}')"></button>
+    </div>`).join('');
+}
+function closeSettings(){ document.getElementById('settingsView').classList.remove('show'); renderShell(); }
+document.getElementById('themeSeg').addEventListener('click', e=>{
+  if(e.target.tagName==='BUTTON'){ state.settings.theme = e.target.dataset.v; save(); document.documentElement.setAttribute('data-theme', state.settings.theme); openSettings(); }
+});
+document.getElementById('navPosSeg').addEventListener('click', e=>{
+  if(e.target.tagName==='BUTTON'){ state.settings.navPos = e.target.dataset.v; save(); document.body.className='nav-'+state.settings.navPos+(state.settings.navLabels?'':' nav-labels-off'); openSettings(); }
+});
+function toggleNavLabels(){ state.settings.navLabels = !state.settings.navLabels; save(); document.getElementById('navLabelToggle').classList.toggle('on'); document.body.classList.toggle('nav-labels-off', !state.settings.navLabels); }
+function toggleSwipe(){ state.settings.swipe = !state.settings.swipe; save(); document.getElementById('swipeToggle').classList.toggle('on'); }
+function toggleReminder(){
+  state.settings.reminderEnabled = !state.settings.reminderEnabled;
+  if(state.settings.reminderEnabled && 'Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+  save(); document.getElementById('reminderToggle').classList.toggle('on');
+}
+function setReminderTime(v){ state.settings.reminderTime = v; save(); }
+function checkReminder(){
+  if(!state.settings.reminderEnabled) return;
+  if(!('Notification' in window) || Notification.permission!=='granted') return;
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0,5);
+  const key = todayKey();
+  if(hhmm === state.settings.reminderTime && state.settings.lastReminderDate !== key){
+    const already = state.reviews.find(r=>r.date===key && (r.did || r.calib));
+    if(!already){
+      new Notification('REWIRE', { body: "Time to close today's entry — evening review is waiting.", icon:'icon-192.png' });
+    }
+    state.settings.lastReminderDate = key; save();
+  }
+}
+setInterval(checkReminder, 30000);
+function toggleModule(m){
+  state.settings.modulesOn[m] = !state.settings.modulesOn[m];
+  save(); currentIndex = 0; renderShell(); openSettings();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download = 'rewire-backup-'+todayKey()+'.json'; a.click();
+  URL.revokeObjectURL(url); showToast('Exported');
+}
+function importData(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      state = Object.assign(state, parsed);
+      save(); showToast('Imported'); closeSettings(); renderShell();
+    }catch(err){ showToast('Import failed — invalid file'); }
+  };
+  reader.readAsText(file);
+}
+
+/* ================= INIT ================= */
+load();
+renderShell();
+attachSwipe();
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registration failed', e));
+  });
+}
+</script>
+</body>
+</html>
